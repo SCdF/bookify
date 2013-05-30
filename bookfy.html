@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Readability playground</title>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" ></script>
+</head>
+<body>
+  <div id="controls">
+    <input id="uri" placeholder="A web article" value="http://coding.smashingmagazine.com/2011/01/12/guidelines-for-responsive-web-design/">
+    <button id="uri-action">Go!</button>
+  </div>
+  <hr>
+  <div id="content">
+    <!-- content goes here -->
+  </div>
+  <style type="text/css">
+    #uri {
+      width: 30em; 
+    }
+
+    #content {
+      padding: 1em;
+      font-size: 150%;
+    }
+  </style>
+  <script type="text/javascript">
+    var pointer = null; 
+
+    var sdufresne = {
+      token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
+      apiRoot: "http://readability.com",
+      loadContent: function(uri) {
+        var url = sdufresne.apiRoot + "/api/content/v1/parser?url=" + uri + "&token=" + sdufresne.token;
+        console.log("Trying to load " + url);
+        $.ajax({
+          url: url,
+          dataType: "jsonp",
+          success:function(results){
+            console.log("Loaded " + results.url);
+            var allContent = $.parseHTML(results.content);
+            var firstNode = $(allContent).find("p").first(); //FIXME robustness
+            sdufresne.renderPage(firstNode);
+          },
+          error:function(e){
+            console.log("Crippling failure: " + e);
+            alert("Something went wrong… it's all HTML, debug it yourself ;-)");
+          },
+        });
+      },
+      isOnScreen: function(element) {
+        var elBottom = element.offset().top + element.height();
+        var screenHeight = $(window).height();
+        console.log("El at " + elBottom + " of " + screenHeight);
+        return (elBottom > screenHeight) ? false : true;
+      },
+      renderPage: function(current) {
+        $("#content").empty();
+
+        current.nextAll().each(function() {
+          var newEl = $(this).clone();
+          $("#content").append(newEl);
+          if (! sdufresne.isOnScreen(newEl)) {
+            newEl.remove();
+
+            //FIXME do this with passing not with globals
+            pointer = $(this);
+
+            return false;
+          }
+        });
+      }
+    };
+
+    $(function() {
+      $("#uri-action").click(function() {
+        sdufresne.loadContent($("#uri").val());
+      });
+      $(document).keydown(function(e) {
+        if (pointer && e.keyCode == 39) {
+          sdufresne.renderPage(pointer);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
