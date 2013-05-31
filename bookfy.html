@@ -25,6 +25,41 @@
   </style>
   <script type="text/javascript">
     /*
+      Concerned with retrieving parsable DOM objects for an article
+    */
+    var readability = {
+      contentHead: function(allContent) {
+        /* returns the head element of the relevant content */
+
+        //BUG this is horribly wrong, but will do for now
+        return $(allContent).find("p").first().siblings().addBack().first();
+      },
+      token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
+      apiRoot: "http://readability.com",
+      apiCallUrl: function(contentUrl) {
+        return readability.apiRoot + "/api/content/v1/parser?url=" + contentUrl + "&token=" + readability.token;
+      },
+      getContent: function(contentUrl, successFn, errorFn) {
+        //FIXME change to map of params
+        /* Slurps content from the given url and passes the first element to success */
+        var apiCallUrl = readability.apiCallUrl(contentUrl);
+
+        console.log("Trying to load " + apiCallUrl);
+        $.ajax({
+          url: apiCallUrl,
+          dataType: "jsonp",
+          success: function(results){
+            console.log("Loaded " + results.url);
+            var allContent = $.parseHTML(results.content);
+
+            successFn(readability.contentHead(allContent));
+          },
+          error: errorFn
+        });
+      }
+    };
+
+    /*
       Concerned with rendering DOM data to the page.
 
       NB: the elements that are rendered to the page are clones of the
@@ -76,43 +111,6 @@
         return resultingPointer;
       }
     };
-
-    /*
-      Concerned with retrieving parsable DOM objects for an article
-    */
-    var readability = {
-      contentHead: function(allContent) {
-        /* returns the head element of the relevant content */
-
-        //BUG this is horribly wrong, but will do for now
-        return $(allContent).find("p").first().siblings().addBack().first();
-      },
-      token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
-      apiRoot: "http://readability.com",
-      apiCallUrl: function(contentUrl) {
-        return readability.apiRoot + "/api/content/v1/parser?url=" + contentUrl + "&token=" + readability.token;
-      },
-      getContent: function(contentUrl, successFn, errorFn) {
-        //FIXME change to map of params
-        /* Slurps content from the given url and passes the first element to success */
-        var apiCallUrl = readability.apiCallUrl(contentUrl);
-
-        console.log("Trying to load " + apiCallUrl);
-        $.ajax({
-          url: apiCallUrl,
-          dataType: "jsonp",
-          success: function(results){
-            console.log("Loaded " + results.url);
-            var allContent = $.parseHTML(results.content);
-
-            successFn(readability.contentHead(allContent));
-          },
-          error: errorFn
-        });
-      }
-    };
-
-
 
     $(function() {
       // TODO put this in a better place
