@@ -28,11 +28,11 @@
       Concerned with retrieving parsable DOM objects for an article
     */
     var readability = {
-      contentHead: function(allContent) {
-        /* returns the head element of the relevant content */
+      extractContent: function(allContent) {
+        /* array of all the main content */
 
         //BUG this is horribly wrong, but will do for now
-        return $(allContent).find("p").first().siblings().addBack().first();
+        return $(allContent).find("p").first().siblings().addBack();
       },
       token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
       apiRoot: "http://readability.com",
@@ -50,9 +50,13 @@
           dataType: "jsonp",
           success: function(results){
             console.log("Loaded " + results.url);
-            var allContent = $.parseHTML(results.content);
 
-            successFn(readability.contentHead(allContent));
+            var title = $("<h1>").html(results.title);
+            var allContent = readability.extractContent($.parseHTML(results.content));
+
+            var combinedArticle = allContent.first().before(title).siblings();
+
+            successFn(combinedArticle.first());
           },
           error: errorFn
         });
