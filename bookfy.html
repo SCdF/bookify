@@ -76,23 +76,10 @@
         // console.log("El at " + elBottom + " of " + screenHeight);
         return (elBottom > screenHeight) ? true : false;
       },
-      renderCurrent: function(pointer) {
-        /* (re)renders the current page of content */
-        $("#content").empty();
-
-        var resultingPointer = {pageHead: pointer.pageHead};
-        pointer.pageHead.nextAll().addBack().each(function() {
-          var pageElement = $(this).clone();
-          $("#content").append(pageElement);
-          if (sdufresne.elementOffPage(pageElement)) {
-            pageElement.remove();
-            resultingPointer.nextPageHead = $(this);
-            return false;
-          }
-        });
-        return resultingPointer;
+      renderCurrentPage: function(pointer) {
+        sdufresne.renderNextPage({nextPageHead: pointer.pageHead});
       },
-      renderForward: function(pointer) {
+      renderNextPage: function(pointer) {
         /* Renders the next page of content */
         $("#content").empty();
 
@@ -108,7 +95,7 @@
         });
         return resultingPointer;
       },
-      renderBackward: function(pointer) {
+      renderPreviousPage: function(pointer) {
         /* Renders the previous page of content */
         $("#content").empty();
 
@@ -142,7 +129,7 @@
       $("#uri-action").click(function() {
         readability.getContent($("#uri").val(),
           function(contentHeadNode) {
-            pointer = sdufresne.renderCurrent({pageHead: contentHeadNode});
+            pointer = sdufresne.renderCurrentPage({pageHead: contentHeadNode});
 
             console.log("Initial render complete");
             console.log(pointer);
@@ -156,12 +143,12 @@
         //TODO clean up, switch or something better
         if (e.keyCode == 39) {
           // Right
-          pointer = sdufresne.renderForward(pointer);
+          pointer = sdufresne.renderNextPage(pointer);
           console.log("Next page complete");
           console.log(pointer);
         } else if (e.keyCode == 37) {
           // Left
-          pointer = sdufresne.renderBackward(pointer);
+          pointer = sdufresne.renderPreviousPage(pointer);
           console.log("Previous page complete");
           console.log(pointer);
         }
@@ -169,7 +156,7 @@
       $(window).resize(function() {
         //FIXME something (threading?) is causing this to be unstable if you
         // drag resize. Maximise etc works correctly
-        pointer = sdufresne.renderCurrent(pointer);
+        pointer = sdufresne.renderCurrentPage(pointer);
         console.log("Current page re-rendered");
         console.log(pointer);
       });
