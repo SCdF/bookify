@@ -25,49 +25,55 @@
   </style>
   <script type="text/javascript">
     /*
-      Concerned with rendering DOM data to the page
+      Concerned with rendering DOM data to the page.
+
+      NB: the elements that are rendered to the page are clones of the
+      elements referenced in the pointer map. This separation can be confusing.
     */
     var sdufresne = {
-      isElementVisible: function(element) {
+      elementOffPage: function(element) {
         var elBottom = element.offset().top + element.height();
         var screenHeight = $(window).height();
-        console.log("El at " + elBottom + " of " + screenHeight);
-        return (elBottom > screenHeight) ? false : true;
+        // console.log("El at " + elBottom + " of " + screenHeight);
+        return (elBottom > screenHeight) ? true : false;
       },
-      renderForward: function() {
-        /* Renders a page of content after and including current node */
-
+      renderForward: function(pointer) {
+        /* Renders a page of content after and including current node
+           and returns the new pointer */
         $("#content").empty();
 
-        pointer.nextAll().each(function() {
-          var newEl = $(this).clone();
-          $("#content").append(newEl);
-          if (! sdufresne.isElementVisible(newEl)) {
-            newEl.remove();
-            pointer = $(this);
+        var resultingPointer = {pageHead: pointer.nextPageHead};
+        pointer.nextPageHead.nextAll().addBack().each(function() {
+          var pageElement = $(this).clone();
+          $("#content").append(pageElement);
+          if (sdufresne.elementOffPage(pageElement)) {
+            pageElement.remove();
+            resultingPointer.nextPageHead = $(this);
             return false;
           }
         });
+        return resultingPointer;
       },
-      renderBackward: function() {
-        /* Renders a page of content preceeding and excluding current node */
-
+      renderBackward: function(pointer) {
+        /* Renders a page of content preceeding and excluding current node
+           and returns the new pointer */
         $("#content").empty();
 
-        var tail = null;
+        var resultingPointer = {nextPageHead: pointer.pageHead};
+        var pageTail = null;
+        pointer.pageHead.prevAll().each(function() {
+          var pageElement = $(this).clone();
 
-        pointer.prevAll().each(function() {
-          var newEl = $(this).clone();
+          if (! pageTail) pageTail = pageElement;
 
-          if (! tail) tail = newEl;
-
-          $("#content").prepend(newEl);
-          if (! sdufresne.isElementVisible(tail)) {
-            newEl.remove();
-            pointer = $(this);
+          $("#content").prepend(pageElement);
+          if (sdufresne.elementOffPage(pageTail)) {
+            pageElement.remove();
+            resultingPointer.pageHead = $(this).next();
             return false;
           }
         });
+        return resultingPointer;
       }
     };
 
@@ -78,8 +84,8 @@
       contentHead: function(allContent) {
         /* returns the head element of the relevant content */
 
-         //BUG this is horribly wrong, but will do for now
-        return $(allContent).find("p").first().siblings().first();
+        //BUG this is horribly wrong, but will do for now
+        return $(allContent).find("p").first().siblings().addBack().first();
       },
       token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
       apiRoot: "http://readability.com",
@@ -106,21 +112,24 @@
       }
     };
 
-    // I hate this. This should be something that we only pass around in different
-    // even fns
-    // var pointer = {
-    //   pageHead: null,
-    //   nextPageHead: null,
-    // };
-    var pointer = null;
+
 
     $(function() {
+      // TODO put this in a better place
+      var pointer = {
+        // The node at the top of the *current* page
+        pageHead: null,
+        // The node that will be at the top of the *next* page
+        nextPageHead: null
+      };
+
       $("#uri-action").click(function() {
         readability.getContent($("#uri").val(),
           function(contentHeadNode) {
-            pointer = contentHeadNode;
+            pointer = sdufresne.renderForward({nextPageHead: contentHeadNode});
 
-            sdufresne.renderForward(pointer);
+            console.log("Initial render complete");
+            console.log(pointer);
           },
           function(e) {
             console.log(e)
@@ -128,13 +137,17 @@
           });
       });
       $(document).keydown(function(e) {
-        if (pointer && e.keyCode == 39) {
+        //TODO clean up, switch or something better
+        if (e.keyCode == 39) {
           // Right
-          sdufresne.renderForward(pointer);
-        } else if (pointer && e.keyCode == 37) {
+          pointer = sdufresne.renderForward(pointer);
+          console.log("Next page complete");
+          console.log(pointer);
+        } else if (e.keyCode == 37) {
           // Left
-          sdufresne.renderBackward(pointer);
-          sdufresne.renderBackward(pointer);
+          pointer = sdufresne.renderBackward(pointer);
+          console.log("Previous page complete");
+          console.log(pointer);
         }
       });
     });
