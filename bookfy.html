@@ -15,69 +15,126 @@
   </div>
   <style type="text/css">
     #uri {
-      width: 30em; 
+      width: 30em;
     }
 
     #content {
-      padding: 1em;
+      margin: 1em;
       font-size: 150%;
     }
   </style>
   <script type="text/javascript">
-    var pointer = null; 
-
+    /*
+      Concerned with rendering DOM data to the page
+    */
     var sdufresne = {
-      token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
-      apiRoot: "http://readability.com",
-      loadContent: function(uri) {
-        var url = sdufresne.apiRoot + "/api/content/v1/parser?url=" + uri + "&token=" + sdufresne.token;
-        console.log("Trying to load " + url);
-        $.ajax({
-          url: url,
-          dataType: "jsonp",
-          success:function(results){
-            console.log("Loaded " + results.url);
-            var allContent = $.parseHTML(results.content);
-            var firstNode = $(allContent).find("p").first(); //FIXME robustness
-            sdufresne.renderPage(firstNode);
-          },
-          error:function(e){
-            console.log("Crippling failure: " + e);
-            alert("Something went wrong… it's all HTML, debug it yourself ;-)");
-          },
-        });
-      },
-      isOnScreen: function(element) {
+      isElementVisible: function(element) {
         var elBottom = element.offset().top + element.height();
         var screenHeight = $(window).height();
         console.log("El at " + elBottom + " of " + screenHeight);
         return (elBottom > screenHeight) ? false : true;
       },
-      renderPage: function(current) {
+      renderForward: function() {
+        /* Renders a page of content after and including current node */
+
         $("#content").empty();
 
-        current.nextAll().each(function() {
+        pointer.nextAll().each(function() {
           var newEl = $(this).clone();
           $("#content").append(newEl);
-          if (! sdufresne.isOnScreen(newEl)) {
+          if (! sdufresne.isElementVisible(newEl)) {
             newEl.remove();
-
-            //FIXME do this with passing not with globals
             pointer = $(this);
+            return false;
+          }
+        });
+      },
+      renderBackward: function() {
+        /* Renders a page of content preceeding and excluding current node */
 
+        $("#content").empty();
+
+        var tail = null;
+
+        pointer.prevAll().each(function() {
+          var newEl = $(this).clone();
+
+          if (! tail) tail = newEl;
+
+          $("#content").prepend(newEl);
+          if (! sdufresne.isElementVisible(tail)) {
+            newEl.remove();
+            pointer = $(this);
             return false;
           }
         });
       }
     };
 
+    /*
+      Concerned with retrieving parsable DOM objects for an article
+    */
+    var readability = {
+      contentHead: function(allContent) {
+        /* returns the head element of the relevant content */
+
+         //BUG this is horribly wrong, but will do for now
+        return $(allContent).find("p").first().siblings().first();
+      },
+      token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
+      apiRoot: "http://readability.com",
+      apiCallUrl: function(contentUrl) {
+        return readability.apiRoot + "/api/content/v1/parser?url=" + contentUrl + "&token=" + readability.token;
+      },
+      getContent: function(contentUrl, successFn, errorFn) {
+        //FIXME change to map of params
+        /* Slurps content from the given url and passes the first element to success */
+        var apiCallUrl = readability.apiCallUrl(contentUrl);
+
+        console.log("Trying to load " + apiCallUrl);
+        $.ajax({
+          url: apiCallUrl,
+          dataType: "jsonp",
+          success: function(results){
+            console.log("Loaded " + results.url);
+            var allContent = $.parseHTML(results.content);
+
+            successFn(readability.contentHead(allContent));
+          },
+          error: errorFn
+        });
+      }
+    };
+
+    // I hate this. This should be something that we only pass around in different
+    // even fns
+    // var pointer = {
+    //   pageHead: null,
+    //   nextPageHead: null,
+    // };
+    var pointer = null;
+
     $(function() {
       $("#uri-action").click(function() {
-        sdufresne.loadContent($("#uri").val());
+        readability.getContent($("#uri").val(),
+          function(contentHeadNode) {
+            pointer = contentHeadNode;
+
+            sdufresne.renderForward(pointer);
+          },
+          function(e) {
+            console.log(e)
+            alert("Something went wrong, check the console");
+          });
       });
       $(document).keydown(function(e) {
         if (pointer && e.keyCode == 39) {
-          sdufresne.renderPage(pointer);
+          // Right
+          sdufresne.renderForward(pointer);
+        } else if (pointer && e.keyCode == 37) {
+          // Left
+          sdufresne.renderBackward(pointer);
+          sdufresne.renderBackward(pointer);
         }
       });
     });
