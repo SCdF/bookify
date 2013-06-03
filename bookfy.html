@@ -64,7 +64,39 @@
     };
 
     /*
-      Concerned with rendering DOM data to the page.
+     * Used to flatten a given DOM structure to only contain the bits we think
+     * are "important". It's annoying Readability et al don't do this for me...
+    */
+    var filters = {
+      isLeafNodeFilter: function() {
+        /* Where 'leaf' means a node filled only with text or 'inline' nodes */
+
+        var inlineDisplays = ['inline', 'table-row', 'table-row-group', 'table-header-group'];
+
+        if ($.inArray($(this).css('display'), inlineDisplays) != -1) {
+          return false;
+        }
+
+        var isLeafNode = true;
+        $(this).children().each(function() {
+          if ($.inArray($(this).css('display'), inlineDisplays) == -1) {
+            isLeafNode = false;
+            return false;
+          }
+        });
+
+        // Debugging check
+        if (isLeafNode && $(this).contents().filter(function() {return this.nodeType == 3}).length != 0) {
+          console.log("We're going to lose text with this element!");
+          console.log(this);
+        }
+
+        return isLeafNode;
+      },
+    }
+
+    /*
+      Concerned with rendering DOM data to the page. Uses the flattener.
 
       NB: the elements that are rendered to the page are clones of the
       elements referenced in the pointer map. This separation can be confusing.
@@ -77,7 +109,7 @@
         return (elBottom > screenHeight) ? true : false;
       },
       renderCurrentPage: function(pointer) {
-        renderer.renderNextPage({nextPageHead: pointer.pageHead});
+        return renderer.renderNextPage({nextPageHead: pointer.pageHead});
       },
       renderNextPage: function(pointer) {
         /* Renders the next page of content */
