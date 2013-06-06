@@ -31,8 +31,11 @@
       extractContent: function(allContent) {
         /* array of all the main content */
 
-        //BUG this is horribly wrong, but will do for now
-        return $(allContent).find("p").first().siblings().addBack();
+        var filteredContent = $("<div></div>");
+        $(allContent).find("*").filter(filters.isLeafNodeFilter).each(function() {
+          filteredContent.append($(this).clone());
+        });
+        return filteredContent.children();
       },
       token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
       apiRoot: "http://readability.com",
@@ -69,27 +72,36 @@
     */
     var filters = {
       isLeafNodeFilter: function() {
-        /* Where 'leaf' means a node filled only with text or 'inline' nodes */
+        /* Where 'leaf' means a block level node with no block level children */
 
-        var inlineDisplays = ['inline', 'table-row', 'table-row-group', 'table-header-group'];
+        var blockLevelElements = ["ADDRESS", "ARTICLE", "ASIDE", "AUDIO",
+          "BLOCKQUOTE", "CANVAS", "DD", "DIV",
+          "DL", "FIELDSET", "FIGCAPTION", "FIGURE",
+          "FOOTER", "FORM", "H1", "H2", "H3",
+          "H4", "H5", "H6", "HEADER", "HGROUP",
+          "HR", "NOSCRIPT", "OL", "OUTPUT", "P", "PRE", "SECTION",
+          "TABLE", "TFOOT", "UL", "VIDEO"];
 
-        if ($.inArray($(this).css('display'), inlineDisplays) != -1) {
+        // Block level check
+        if ($.inArray($(this).prop('tagName'), blockLevelElements) == -1) {
           return false;
         }
 
+        // Children reverse block level check
         var isLeafNode = true;
         $(this).children().each(function() {
-          if ($.inArray($(this).css('display'), inlineDisplays) == -1) {
+          if ($.inArray($(this).prop('tagName'), blockLevelElements) != -1) {
             isLeafNode = false;
             return false;
           }
         });
 
-        // Debugging check
-        if (isLeafNode && $(this).contents().filter(function() {return this.nodeType == 3}).length != 0) {
-          console.log("We're going to lose text with this element!");
-          console.log(this);
-        }
+        /*
+          TODO check for a node that we'd lose content on, e.g.
+          <div>This would go<p>but this would stay</p></div>
+          This includes more pernicious situations where we lose useful data,
+          e.g. <blockquote><p>The blockquote node will be lost</p></blockquote>
+        */
 
         return isLeafNode;
       },
