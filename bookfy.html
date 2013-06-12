@@ -167,9 +167,22 @@
       Concerned with logic around rendering pages
     */
     var controller = {
+      largeElementHack: function(el, surface) {
+        console.log("Element too large, forcing render");
+        surface.append(el.clone());
+        return {
+          pageHead: el,
+          nextPageHead: el.next()
+        };
+      },
       renderCurrentPage: function(pointer, surface) {
         surface.empty();
         var report = renderer.renderPageForward(pointer.pageHead, surface);
+
+        // TEMP hack for when elements are too large to ever be rendered
+        if (!report.lastRendered) {
+          return controller.largeElementHack(pointer.pageHead, surface);
+        }
 
         return {
           pageHead: report.firstRendered,
@@ -184,6 +197,11 @@
 
         surface.empty();
         var report = renderer.renderPageForward(pointer.nextPageHead, surface);
+
+        // TEMP hack for when elements are too large to ever be rendered
+        if (!report.lastRendered) {
+          return controller.largeElementHack(pointer.nextPageHead, surface);
+        }
 
         return  {
           pageHead: report.firstRendered,
@@ -203,10 +221,12 @@
         if (!report.aborted) {
           // Haven't run out of space yet, render forward as well
           var forwardReport = renderer.renderPageForward(report.firstRendered.next(), surface);
-          return  {
-            pageHead: report.lastRendered,
-            nextPageHead: forwardReport.lastRendered.next()
-          };
+          if (forwardReport.lastRendered) {
+            return  {
+              pageHead: report.lastRendered,
+              nextPageHead: forwardReport.lastRendered.next()
+            };
+          }
         }
 
         return  {
@@ -251,6 +271,11 @@
           // Left
           pointer = controller.renderPreviousPage(pointer, surface);
           console.log("Previous page complete");
+          console.log(pointer);
+        } else if (e.keyCode == 38) {
+          // Up
+          pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
+          console.log("Back to top complete");
           console.log(pointer);
         }
       });
