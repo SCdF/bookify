@@ -28,49 +28,6 @@
       Concerned with retrieving parsable DOM objects for an article
     */
     var readability = {
-      extractContent: function(allContent) {
-        /* array of all the main content */
-
-        var filteredContent = $("<div></div>");
-        $(allContent).find("*").filter(filters.isLeafNodeFilter).each(function() {
-          filteredContent.append($(this).clone());
-        });
-        return filteredContent.children();
-      },
-      token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
-      apiRoot: "http://readability.com",
-      apiCallUrl: function(contentUrl) {
-        return readability.apiRoot + "/api/content/v1/parser?url=" + contentUrl + "&token=" + readability.token;
-      },
-      getContent: function(contentUrl, successFn, errorFn) {
-        //FIXME change to map of params
-        /* Slurps content from the given url and passes the first element to success */
-        var apiCallUrl = readability.apiCallUrl(contentUrl);
-
-        console.log("Trying to load " + apiCallUrl);
-        $.ajax({
-          url: apiCallUrl,
-          dataType: "jsonp",
-          success: function(results){
-            console.log("Loaded " + results.url);
-
-            var title = $("<h1>").html(results.title);
-            var allContent = readability.extractContent($.parseHTML(results.content));
-
-            var combinedArticle = allContent.first().before(title).siblings();
-
-            successFn(combinedArticle.first());
-          },
-          error: errorFn
-        });
-      }
-    };
-
-    /*
-     * Used to flatten a given DOM structure to only contain the bits we think
-     * are "important". It's annoying Readability et al don't do this for me...
-    */
-    var filters = {
       isLeafNodeFilter: function() {
         /* Where 'leaf' means a block level node with no block level children */
 
@@ -105,10 +62,46 @@
 
         return isLeafNode;
       },
-    }
+      extractContent: function(allContent) {
+        /* array of all the main content */
+
+        var filteredContent = $("<div></div>");
+        $(allContent).find("*").filter(readability.isLeafNodeFilter).each(function() {
+          filteredContent.append($(this).clone());
+        });
+        return filteredContent.children();
+      },
+      token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
+      apiRoot: "http://readability.com",
+      apiCallUrl: function(contentUrl) {
+        return readability.apiRoot + "/api/content/v1/parser?url=" + contentUrl + "&token=" + readability.token;
+      },
+      getContent: function(contentUrl, successFn, errorFn) {
+        //FIXME change to map of params
+        /* Slurps content from the given url and passes the first element to success */
+        var apiCallUrl = readability.apiCallUrl(contentUrl);
+
+        console.log("Trying to load " + apiCallUrl);
+        $.ajax({
+          url: apiCallUrl,
+          dataType: "jsonp",
+          success: function(results){
+            console.log("Loaded " + results.url);
+
+            var title = $("<h1>").html(results.title);
+            var allContent = readability.extractContent($.parseHTML(results.content));
+
+            var combinedArticle = allContent.first().before(title).siblings();
+
+            successFn(combinedArticle.first());
+          },
+          error: errorFn
+        });
+      }
+    };
 
     /*
-      Concerned with rendering DOM data to the page. Uses the flattener.
+      Concerned with rendering DOM data to the page.
 
       NB: the elements that are rendered to the page are clones of the
       elements referenced in the pointer map. This separation can be confusing.
@@ -120,17 +113,15 @@
         // console.log("El at " + elBottom + " of " + screenHeight);
         return (elBottom > screenHeight) ? true : false;
       },
-      renderCurrentPage: function(pointer) {
-        return renderer.renderNextPage({nextPageHead: pointer.pageHead});
+      renderCurrentPage: function(pointer, surface) {
+        return renderer.renderNextPage({nextPageHead: pointer.pageHead}, surface);
       },
-      renderNextPage: function(pointer) {
+      renderNextPage: function(pointer, surface) {
         /* Renders the next page of content */
-        $("#content").empty();
-
         var resultingPointer = {pageHead: pointer.nextPageHead};
         pointer.nextPageHead.nextAll().addBack().each(function() {
           var pageElement = $(this).clone();
-          $("#content").append(pageElement);
+          surface.append(pageElement);
           if (renderer.elementOffPage(pageElement)) {
             pageElement.remove();
             resultingPointer.nextPageHead = $(this);
@@ -139,10 +130,8 @@
         });
         return resultingPointer;
       },
-      renderPreviousPage: function(pointer) {
+      renderPreviousPage: function(pointer, surface) {
         /* Renders the previous page of content */
-        $("#content").empty();
-
         var resultingPointer = {nextPageHead: pointer.pageHead};
         var pageTail = null;
         pointer.pageHead.prevAll().each(function() {
@@ -150,13 +139,19 @@
 
           if (! pageTail) pageTail = pageElement;
 
-          $("#content").prepend(pageElement);
+          surface.prepend(pageElement);
           if (renderer.elementOffPage(pageTail)) {
             pageElement.remove();
             resultingPointer.pageHead = $(this).next();
             return false;
           }
         });
+
+        // if (! resultingPointer.pageHead) {
+        //   // Loop never aborted, we hit the start
+        //   return renderer.renderCurrentPage({nextPageHead: pointer.pageHead.siblings().first()});
+        // }
+
         return resultingPointer;
       }
     };
@@ -170,10 +165,13 @@
         nextPageHead: null
       };
 
+      var surface = $('#content');
+
       $("#uri-action").click(function() {
         readability.getContent($("#uri").val(),
           function(contentHeadNode) {
-            pointer = renderer.renderCurrentPage({pageHead: contentHeadNode});
+            surface.empty();
+            pointer = renderer.renderCurrentPage({pageHead: contentHeadNode}, surface);
 
             console.log("Initial render complete");
             console.log(pointer);
@@ -187,20 +185,21 @@
         //TODO clean up, switch or something better
         if (e.keyCode == 39) {
           // Right
-          pointer = renderer.renderNextPage(pointer);
+          surface.empty();
+          pointer = renderer.renderNextPage(pointer, surface);
           console.log("Next page complete");
           console.log(pointer);
         } else if (e.keyCode == 37) {
           // Left
-          pointer = renderer.renderPreviousPage(pointer);
+          surface.empty();
+          pointer = renderer.renderPreviousPage(pointer, surface);
           console.log("Previous page complete");
           console.log(pointer);
         }
       });
       $(window).resize(function() {
-        //FIXME something (threading?) is causing this to be unstable if you
-        // drag resize. Maximise etc works correctly
-        pointer = renderer.renderCurrentPage(pointer);
+        surface.empty();
+        pointer = renderer.renderCurrentPage(pointer, surface);
         console.log("Current page re-rendered");
         console.log(pointer);
       });
