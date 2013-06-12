@@ -2,7 +2,8 @@
 <html>
 <head>
   <title>Readability playground</title>
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js" ></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js" ></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
 </head>
 <body>
   <div id="controls">
@@ -177,7 +178,7 @@
       },
       renderNextPage: function(pointer, surface) {
         if (pointer.nextPageHead.length == 0) {
-          alert("No more pages, you're at the end!");
+          surface.effect("shake", {direction: "left", distance: 5});
           return pointer;
         }
 
@@ -192,7 +193,7 @@
       renderPreviousPage: function(pointer, surface) {
         var prevEl = pointer.pageHead.prev();
         if (prevEl.length == 0) {
-          alert("No more pages, you're at the start!");
+          surface.effect("shake", {direction: "right", distance: 5});
           return pointer;
         }
 
