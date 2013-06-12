@@ -101,10 +101,7 @@
     };
 
     /*
-      Concerned with rendering DOM data to the page.
-
-      NB: the elements that are rendered to the page are clones of the
-      elements referenced in the pointer map. This separation can be confusing.
+      Concerned with rendering cloned DOM data to the page.
     */
     var renderer = {
       elementOffPage: function(element) {
@@ -113,46 +110,99 @@
         // console.log("El at " + elBottom + " of " + screenHeight);
         return (elBottom > screenHeight) ? true : false;
       },
-      renderCurrentPage: function(pointer, surface) {
-        return renderer.renderNextPage({nextPageHead: pointer.pageHead}, surface);
-      },
-      renderNextPage: function(pointer, surface) {
-        /* Renders the next page of content */
-        var resultingPointer = {pageHead: pointer.nextPageHead};
-        pointer.nextPageHead.nextAll().addBack().each(function() {
+      renderPageForward: function(element, surface) {
+        /* Renders the page forwards, starting with the given element */
+        var lastRendered = null;
+        var aborted = false;
+
+        element.nextAll().addBack().each(function() {
           var pageElement = $(this).clone();
           surface.append(pageElement);
           if (renderer.elementOffPage(pageElement)) {
+            aborted = true;
             pageElement.remove();
-            resultingPointer.nextPageHead = $(this);
             return false;
+          } else {
+            lastRendered = $(this);
           }
         });
-        return resultingPointer;
+
+        return {
+          firstRendered: element,
+          lastRendered: lastRendered,
+          aborted: aborted
+        };
       },
-      renderPreviousPage: function(pointer, surface) {
-        /* Renders the previous page of content */
-        var resultingPointer = {nextPageHead: pointer.pageHead};
+      renderPageBackward: function(element, surface) {
+        /* Renders the page in reverse, starting with the given element. */
+        var lastRendered = null;
+        var aborted = false;
+
         var pageTail = null;
-        pointer.pageHead.prevAll().each(function() {
+        element.next().prevAll().each(function() {
           var pageElement = $(this).clone();
 
           if (! pageTail) pageTail = pageElement;
 
           surface.prepend(pageElement);
           if (renderer.elementOffPage(pageTail)) {
+            aborted = true;
             pageElement.remove();
-            resultingPointer.pageHead = $(this).next();
             return false;
+          } else {
+            lastRendered = $(this);
           }
         });
 
-        // if (! resultingPointer.pageHead) {
-        //   // Loop never aborted, we hit the start
-        //   return renderer.renderCurrentPage({nextPageHead: pointer.pageHead.siblings().first()});
-        // }
+        return {
+          firstRendered: element,
+          lastRendered: lastRendered,
+          aborted: aborted
+        };
+      }
+    };
 
-        return resultingPointer;
+    /*
+      Concerned with logic around rendering pages
+    */
+    var controller = {
+      renderCurrentPage: function(pointer, surface) {
+        surface.empty();
+        var report = renderer.renderPageForward(pointer.pageHead, surface);
+
+        return {
+          pageHead: report.firstRendered,
+          nextPageHead: report.lastRendered.next()
+        };
+      },
+      renderNextPage: function(pointer, surface) {
+        if (pointer.nextPageHead.length == 0) {
+          alert("No more pages, you're at the end!");
+          return pointer;
+        }
+
+        surface.empty();
+        var report = renderer.renderPageForward(pointer.nextPageHead, surface);
+
+        return  {
+          pageHead: report.firstRendered,
+          nextPageHead: report.lastRendered.next()
+        };
+      },
+      renderPreviousPage: function(pointer, surface) {
+        var prevEl = pointer.pageHead.prev();
+        if (prevEl.length == 0) {
+          alert("No more pages, you're at the start!");
+          return pointer;
+        }
+
+        surface.empty();
+        var report = renderer.renderPageBackward(prevEl, surface);
+
+        return  {
+          pageHead: report.lastRendered,
+          nextPageHead: report.firstRendered.next()
+        };
       }
     };
 
@@ -170,8 +220,7 @@
       $("#uri-action").click(function() {
         readability.getContent($("#uri").val(),
           function(contentHeadNode) {
-            surface.empty();
-            pointer = renderer.renderCurrentPage({pageHead: contentHeadNode}, surface);
+            pointer = controller.renderCurrentPage({pageHead: contentHeadNode}, surface);
 
             console.log("Initial render complete");
             console.log(pointer);
@@ -185,21 +234,18 @@
         //TODO clean up, switch or something better
         if (e.keyCode == 39) {
           // Right
-          surface.empty();
-          pointer = renderer.renderNextPage(pointer, surface);
+          pointer = controller.renderNextPage(pointer, surface);
           console.log("Next page complete");
           console.log(pointer);
         } else if (e.keyCode == 37) {
           // Left
-          surface.empty();
-          pointer = renderer.renderPreviousPage(pointer, surface);
+          pointer = controller.renderPreviousPage(pointer, surface);
           console.log("Previous page complete");
           console.log(pointer);
         }
       });
       $(window).resize(function() {
-        surface.empty();
-        pointer = renderer.renderCurrentPage(pointer, surface);
+        pointer = controller.renderCurrentPage(pointer, surface);
         console.log("Current page re-rendered");
         console.log(pointer);
       });
