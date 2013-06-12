@@ -199,6 +199,15 @@
         surface.empty();
         var report = renderer.renderPageBackward(prevEl, surface);
 
+        if (!report.aborted) {
+          // Haven't run out of space yet, render forward as well
+          var forwardReport = renderer.renderPageForward(report.firstRendered.next(), surface);
+          return  {
+            pageHead: report.lastRendered,
+            nextPageHead: forwardReport.lastRendered.next()
+          };
+        }
+
         return  {
           pageHead: report.lastRendered,
           nextPageHead: report.firstRendered.next()
