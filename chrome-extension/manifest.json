@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+
+  "name": "Bookify",
+  "description": "Makes webpages read like a book! With Readability.",
+  "version": "0.1",
+  "permissions": [
+    "activeTab",
+    "http://readability.com/*"
+  ],
+  "browser_action": {
+    "default_title": "Bookify!"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  }//,
+  // "content_scripts": [{
+  //   "matches": ["*://*/*"],
+  //   "js": ["content.js"]
+  // }]
+}
