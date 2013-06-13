@@ -6,7 +6,8 @@
   "version": "0.1",
   "permissions": [
     "activeTab",
-    "http://readability.com/*"
+    "http://readability.com/*",
+    "https://readability.com/*"
   ],
   "browser_action": {
     "default_title": "Bookify!"

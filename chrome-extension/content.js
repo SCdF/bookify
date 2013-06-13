@@ -1,3 +1,5 @@
+//@ sourceURL=content.js
+
 /*
   Concerned with retrieving parsable DOM objects for an article
 */
@@ -46,7 +48,7 @@ var readability = {
     return filteredContent.children();
   },
   token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
-  apiRoot: "http://readability.com",
+  apiRoot: "https://readability.com",
   apiCallUrl: function(contentUrl) {
     return readability.apiRoot + "/api/content/v1/parser?url=" + contentUrl + "&token=" + readability.token;
   },
@@ -232,11 +234,10 @@ function sdufresnesBigScaryBookifyGuy() {
       console.log("Initial render complete");
       console.log(pointer);
     },
-    function(e) {
+    function(jqXHR, textStatus, errorThrown) {
       console.log("Something went wrong, error below the line!")
-      console.log(e);
-      console.log(e.error());
-      alert("Something went wrong, check the console");
+      console.log(textStatus, errorThrown);
+      $("#content").append("<p>"+textStatus+"</p><p>"+errorThrown+"</p>");
     });
 
   $(document).keydown(function(e) {
