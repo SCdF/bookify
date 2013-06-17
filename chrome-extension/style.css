@@ -41,8 +41,8 @@ body {
     -webkit-column-count: 2;
     column-count: 2;
 
-    -moz-column-gap: 1em;
-    -webkit-column-gap: 1em;
-    column-gap: 1em;
+    -moz-column-gap: 2em;
+    -webkit-column-gap: 2em;
+    column-gap: 2em;
   }
 }
