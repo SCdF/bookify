@@ -224,8 +224,8 @@ function initBookify() {
   window.onload = window.onunload = function() {};
   $("head").empty();
   $("body").empty();
-  $("body").append("<div id='content'></div>");
 
+  $("body").append("<div id='content'></div>");
   var surface = $('#content');
 
   $("#content").append("<h1>LOADING BRO...</h1>");
