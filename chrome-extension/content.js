@@ -57,12 +57,12 @@ var readability = {
     /* Slurps content from the given url and passes the first element to success */
     var apiCallUrl = readability.apiCallUrl(contentUrl);
 
-    console.log("Trying to load " + apiCallUrl);
+    //console.log("Trying to load " + apiCallUrl);
     $.ajax({
       url: apiCallUrl,
       dataType: "json",
       success: function(results){
-        console.log("Loaded " + results.url);
+        //console.log("Loaded " + results.url);
 
         var title = $("<h1>").html(results.title);
         var allContent = readability.extractContent($.parseHTML(results.content));
@@ -83,7 +83,7 @@ var renderer = {
   elementOffPage: function(element) {
     var elBottom = element.offset().top + element.height();
     var screenHeight = $(window).height();
-    // console.log("El at " + elBottom + " of " + screenHeight);
+    // //console.log("El at " + elBottom + " of " + screenHeight);
     return (elBottom > screenHeight) ? true : false;
   },
   renderPageForward: function(element, surface) {
@@ -143,7 +143,7 @@ var renderer = {
 */
 var controller = {
   largeElementHack: function(el, surface) {
-    console.log("Element too large, forcing render");
+    //console.log("Element too large, forcing render");
     surface.append(el.clone());
     return {
       pageHead: el,
@@ -220,8 +220,11 @@ function sdufresnesBigScaryBookifyGuy() {
     nextPageHead: null
   };
 
+  // Nuke the current page from orbit
+  window.onload = window.onunload = function() {};
+  $("script").remove();
   $("body").empty();
-  $("body").append("<div id='content'/>");
+  $("body").append("<div id='content'></div>");
 
   var surface = $('#content');
 
@@ -231,12 +234,12 @@ function sdufresnesBigScaryBookifyGuy() {
     function(contentHeadNode) {
       pointer = controller.renderCurrentPage({pageHead: contentHeadNode}, surface);
 
-      console.log("Initial render complete");
-      console.log(pointer);
+      //console.log("Initial render complete");
+      //console.log(pointer);
     },
     function(jqXHR, textStatus, errorThrown) {
-      console.log("Something went wrong, error below the line!")
-      console.log(textStatus, errorThrown);
+      //console.log("Something went wrong, error below the line!")
+      //console.log(textStatus, errorThrown);
       $("#content").append("<p>"+textStatus+"</p><p>"+errorThrown+"</p>");
     });
 
@@ -245,24 +248,24 @@ function sdufresnesBigScaryBookifyGuy() {
     if (e.keyCode == 39) {
       // Right
       pointer = controller.renderNextPage(pointer, surface);
-      console.log("Next page complete");
-      console.log(pointer);
+      //console.log("Next page complete");
+      //console.log(pointer);
     } else if (e.keyCode == 37) {
       // Left
       pointer = controller.renderPreviousPage(pointer, surface);
-      console.log("Previous page complete");
-      console.log(pointer);
+      //console.log("Previous page complete");
+      //console.log(pointer);
     } else if (e.keyCode == 38) {
       // Up
       pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
-      console.log("Back to top complete");
-      console.log(pointer);
+      //console.log("Back to top complete");
+      //console.log(pointer);
     }
   });
   $(window).resize(function() {
     pointer = controller.renderCurrentPage(pointer, surface);
-    console.log("Current page re-rendered");
-    console.log(pointer);
+    //console.log("Current page re-rendered");
+    //console.log(pointer);
   });
   $(window).on('swipeleft', function() {
     pointer = controller.renderNextPage(pointer, surface);
