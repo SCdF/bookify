@@ -222,7 +222,7 @@ function sdufresnesBigScaryBookifyGuy() {
 
   // Nuke the current page from orbit
   window.onload = window.onunload = function() {};
-  $("script").remove();
+  $("head").empty();
   $("body").empty();
   $("body").append("<div id='content'></div>");
 

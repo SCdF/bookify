@@ -4,13 +4,19 @@
   "name": "Bookify",
   "description": "Makes webpages read like a book! With Readability.",
   "version": "0.1",
+  "icons": {
+    "16": "icon_16.png",
+    "48": "icon_48.png",
+    "128": "icon_128.png"
+  },
   "permissions": [
     "activeTab",
     "http://readability.com/*",
     "https://readability.com/*"
   ],
   "browser_action": {
-    "default_title": "Bookify!"
+    "default_title": "Bookify!",
+    "default_icon": "icon_48.png"
   },
   "background": {
     "scripts": ["background.js"]
