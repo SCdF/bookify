@@ -94,7 +94,7 @@ var renderer = {
     element.nextAll().addBack().each(function() {
       var pageElement = $(this).clone();
       surface.append(pageElement);
-      if (renderer.elementOffPage(pageElement)) {
+      if (renderer.elementOffPage(surface)) {
         aborted = true;
         pageElement.remove();
         return false;
@@ -121,7 +121,7 @@ var renderer = {
       if (! pageTail) pageTail = pageElement;
 
       surface.prepend(pageElement);
-      if (renderer.elementOffPage(pageTail)) {
+      if (renderer.elementOffPage(surface)) {
         aborted = true;
         pageElement.remove();
         return false;
@@ -211,7 +211,7 @@ var controller = {
   }
 };
 
-function sdufresnesBigScaryBookifyGuy() {
+function initBookify() {
   // TODO put this in a better place
   var pointer = {
     // The node at the top of the *current* page
@@ -235,44 +235,31 @@ function sdufresnesBigScaryBookifyGuy() {
       pointer = controller.renderCurrentPage({pageHead: contentHeadNode}, surface);
 
       //console.log("Initial render complete");
-      //console.log(pointer);
     },
     function(jqXHR, textStatus, errorThrown) {
-      //console.log("Something went wrong, error below the line!")
-      //console.log(textStatus, errorThrown);
+      console.log("Something went wrong, error below the line!")
+      console.log(textStatus, errorThrown);
       $("#content").append("<p>"+textStatus+"</p><p>"+errorThrown+"</p>");
     });
 
   $(document).keydown(function(e) {
     //TODO clean up, switch or something better
-    if (e.keyCode == 39) {
-      // Right
+    if (e.keyCode == 39 || (!e.shiftKey && e.keyCode == 32)) {
+      // Right or Space
       pointer = controller.renderNextPage(pointer, surface);
-      //console.log("Next page complete");
-      //console.log(pointer);
-    } else if (e.keyCode == 37) {
-      // Left
+    } else if (e.keyCode == 37 || (e.shiftKey && e.keyCode == 32)) {
+      // Left or Shift+Space
       pointer = controller.renderPreviousPage(pointer, surface);
-      //console.log("Previous page complete");
-      //console.log(pointer);
     } else if (e.keyCode == 38) {
       // Up
       pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
-      //console.log("Back to top complete");
-      //console.log(pointer);
+    } else {
+      //console.log("Pressed " + e.keyCode);
     }
   });
   $(window).resize(function() {
     pointer = controller.renderCurrentPage(pointer, surface);
-    //console.log("Current page re-rendered");
-    //console.log(pointer);
-  });
-  $(window).on('swipeleft', function() {
-    pointer = controller.renderNextPage(pointer, surface);
-  });
-  $(window).on('swiperight', function() {
-    pointer = controller.renderPreviousPage(pointer, surface);
   });
 };
 
-sdufresnesBigScaryBookifyGuy();
+initBookify();
