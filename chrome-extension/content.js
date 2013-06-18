@@ -227,6 +227,7 @@ function initBookify() {
   $("#content").append("<h1>LOADING BRO...</h1>");
 
   readability.getContent(document.URL,
+    function(results) {
       var title = $("<h1>").html(results.title);
       var combinedArticle = results.content.first().before(title).siblings();
 
