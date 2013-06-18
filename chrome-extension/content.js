@@ -63,13 +63,9 @@ var readability = {
       dataType: "json",
       success: function(results){
         //console.log("Loaded " + results.url);
+        results.content = readability.extractContent($.parseHTML(results.content));
 
-        var title = $("<h1>").html(results.title);
-        var allContent = readability.extractContent($.parseHTML(results.content));
-
-        var combinedArticle = allContent.first().before(title).siblings();
-
-        successFn(combinedArticle.first());
+        successFn(results);
       },
       error: errorFn
     });
@@ -231,8 +227,10 @@ function initBookify() {
   $("#content").append("<h1>LOADING BRO...</h1>");
 
   readability.getContent(document.URL,
-    function(contentHeadNode) {
-      pointer = controller.renderCurrentPage({pageHead: contentHeadNode}, surface);
+      var title = $("<h1>").html(results.title);
+      var combinedArticle = results.content.first().before(title).siblings();
+
+      pointer = controller.renderCurrentPage({pageHead: combinedArticle.first()}, surface);
 
       //console.log("Initial render complete");
     },
