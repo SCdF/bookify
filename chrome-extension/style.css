@@ -4,12 +4,12 @@
 /* Bookify stuff */
 
 body {
-  /*background-color: wheat;*/
-  background-color: #FFF8E7; /* cosmic latte */
+  /*background-color: #FFF8E7; /* cosmic latte */
+  background-color: white;
 }
 
 #content {
-  padding: 0 1em;
+  padding: .5em 1em;
 
   font-size: 125%;
   font-family: sans-serif;
