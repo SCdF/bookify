@@ -207,59 +207,76 @@ var controller = {
   }
 };
 
-function initBookify() {
-  // TODO put this in a better place
-  var pointer = {
-    // The node at the top of the *current* page
-    pageHead: null,
-    // The node that will be at the top of the *next* page
-    nextPageHead: null
-  };
 
-  // Nuke the current page from orbit
-  window.onload = window.onunload = function() {};
-  $("head").empty();
-  $("body").empty();
+//TODO scope these to the bookify "NS"
+pointer = {
+  // The node at the top of the *current* page
+  pageHead: null,
+  // The node that will be at the top of the *next* page
+  nextPageHead: null
+};
+surface = null;
 
-  $("body").append("<div id='content'></div>");
-  var surface = $('#content');
+var bookify = {
+  nukePageFromOrbit: function() {
+    // Nuke the current page from orbit
+    window.onload = window.onunload = function() {};
+    $("head").empty();
+    $("body").empty();
 
-  $("#content").append("<h1>LOADING BRO...</h1>");
+    $("body").append("<div id='content'></div>");
+    return $('#content');
+  },
 
-  readability.getContent(document.URL,
-    function(results) {
-      document.title = results.title;
-      var title = $("<h1>").html(results.title);
-      var combinedArticle = results.content.first().before(title).siblings();
-
-      pointer = controller.renderCurrentPage({pageHead: combinedArticle.first()}, surface);
-
-      //console.log("Initial render complete");
-    },
-    function(jqXHR, textStatus, errorThrown) {
-      console.log("Something went wrong, error below the line!")
-      console.log(textStatus, errorThrown);
-      $("#content").append("<p>"+textStatus+"</p><p>"+errorThrown+"</p>");
+  initEvents: function() {
+    $(document).keydown(function(e) {
+      //TODO clean up, switch or something better
+      if (e.keyCode == 39 || (!e.shiftKey && e.keyCode == 32)) {
+        // Right or Space
+        pointer = controller.renderNextPage(pointer, surface);
+      } else if (e.keyCode == 37 || (e.shiftKey && e.keyCode == 32)) {
+        // Left or Shift+Space
+        pointer = controller.renderPreviousPage(pointer, surface);
+      } else if (e.keyCode == 38) {
+        // Up
+        pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
+      } else {
+        //console.log("Pressed " + e.keyCode);
+      }
     });
+    $(window).resize(function() {
+      pointer = controller.renderCurrentPage(pointer, surface);
+    });
+  },
 
-  $(document).keydown(function(e) {
-    //TODO clean up, switch or something better
-    if (e.keyCode == 39 || (!e.shiftKey && e.keyCode == 32)) {
-      // Right or Space
-      pointer = controller.renderNextPage(pointer, surface);
-    } else if (e.keyCode == 37 || (e.shiftKey && e.keyCode == 32)) {
-      // Left or Shift+Space
-      pointer = controller.renderPreviousPage(pointer, surface);
-    } else if (e.keyCode == 38) {
-      // Up
-      pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
-    } else {
-      //console.log("Pressed " + e.keyCode);
-    }
-  });
-  $(window).resize(function() {
-    pointer = controller.renderCurrentPage(pointer, surface);
-  });
+  loadPageAttempt: function() {
+    readability.getContent(document.URL,
+      function(results) {
+        chrome.runtime.sendMessage({state: "loaded"}, function() {
+          surface = bookify.nukePageFromOrbit();
+          bookify.initEvents();
+
+          document.title = results.title;
+          var title = $("<h1>").html(results.title);
+          var combinedArticle = results.content.first().before(title).siblings();
+
+          pointer = controller.renderCurrentPage({pageHead: combinedArticle.first()}, surface);
+        });
+      },
+      function(jqXHR, textStatus, errorThrown) {
+        chrome.runtime.sendMessage({state: "error", textStatus: textStatus, errorThrown: errorThrown});
+
+        console.log("Something went wrong, error below the line!")
+        console.log(textStatus, errorThrown);
+        $("#content").append("<p>"+textStatus+"</p><p>"+errorThrown+"</p>");
+      });
+  },
+
+  init: function() {
+    chrome.runtime.sendMessage({state: "loading"}, function() {
+      bookify.loadPageAttempt();
+    });
+  }
 };
 
-initBookify();
+bookify.init();
