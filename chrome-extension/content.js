@@ -207,7 +207,6 @@ var controller = {
   }
 };
 
-
 //TODO scope these to the bookify "NS"
 pointer = {
   // The node at the top of the *current* page
@@ -216,6 +215,7 @@ pointer = {
   nextPageHead: null
 };
 surface = null;
+cursorHideTimeoutId = null;
 
 var bookify = {
   nukePageFromOrbit: function() {
@@ -226,6 +226,33 @@ var bookify = {
 
     $("body").append("<div id='content'></div>");
     return $('#content');
+  },
+
+  cleanMouseMovement: function (successFn) {
+    // Clean up bogus mouse movement
+    var x = -1, y = -1;
+
+    return function(e) {
+      if (e.pageX !== x || e.pageY !== y) {
+        x = e.pageX;
+        y = e.pageY;
+
+        successFn(e);
+      }
+    }
+  },
+
+  mouseMovement: function(e) {
+    if (cursorHideTimeoutId) {
+      window.clearTimeout(cursorHideTimeoutId);
+    }
+
+    $("body").css("cursor", "default");
+
+    cursorHideTimeoutId = window.setTimeout(
+      function() {
+        $("body").css("cursor", "none");
+      }, 3000);
   },
 
   initEvents: function() {
@@ -244,6 +271,7 @@ var bookify = {
         //console.log("Pressed " + e.keyCode);
       }
     });
+    $(document).mousemove(bookify.cleanMouseMovement(bookify.mouseMovement));
     $(window).resize(function() {
       pointer = controller.renderCurrentPage(pointer, surface);
     });
