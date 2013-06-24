@@ -87,10 +87,12 @@ var renderer = {
     var lastRendered = null;
     var aborted = false;
 
+    var body = $("body");
+
     element.nextAll().addBack().each(function() {
       var pageElement = $(this).clone();
       surface.append(pageElement);
-      if (renderer.elementOffPage(surface)) {
+      if (renderer.elementOffPage(body)) {
         aborted = true;
         pageElement.remove();
         return false;
@@ -110,6 +112,8 @@ var renderer = {
     var lastRendered = null;
     var aborted = false;
 
+    var body = $("body");
+
     var pageTail = null;
     element.next().prevAll().each(function() {
       var pageElement = $(this).clone();
@@ -117,7 +121,7 @@ var renderer = {
       if (! pageTail) pageTail = pageElement;
 
       surface.prepend(pageElement);
-      if (renderer.elementOffPage(surface)) {
+      if (renderer.elementOffPage(body)) {
         aborted = true;
         pageElement.remove();
         return false;
@@ -198,6 +202,10 @@ var controller = {
           nextPageHead: forwardReport.lastRendered.next()
         };
       }
+    } else if (!report.lastRendered) {
+      // TEMP hack for when elements are too large to ever be rendered
+
+      return controller.largeElementHack(prevEl, surface);
     }
 
     return  {
@@ -207,7 +215,7 @@ var controller = {
   }
 };
 
-//TODO scope these to the bookify "NS"
+// TODO rewrite this to use objects, e.g. not horrible global scope madness
 pointer = {
   // The node at the top of the *current* page
   pageHead: null,
