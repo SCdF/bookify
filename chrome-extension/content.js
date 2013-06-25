@@ -50,7 +50,7 @@ var readability = {
   token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
   apiRoot: "https://readability.com",
   apiCallUrl: function(contentUrl) {
-    return readability.apiRoot + "/api/content/v1/parser?url=" + contentUrl + "&token=" + readability.token;
+    return readability.apiRoot + "/api/content/v1/parser?token=" + readability.token + "&url=" + contentUrl;
   },
   getContent: function(contentUrl, successFn, errorFn) {
     //FIXME change to map of params
