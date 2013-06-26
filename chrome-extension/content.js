@@ -150,6 +150,12 @@ window.bookify = (function() {
     Concerned with logic around rendering pages
   */
   var controller = {
+    updateProgressbar: function(progressbar, elements, currentEl) {
+      var progress = currentEl.length == 0 ? elements.length : elements.index(currentEl);
+
+      progressbar.progressbar("option", "value", progress);
+    },
+
     largeElementHack: function(el, surface) {
       //console.log("Element too large, forcing render");
       surface.append(el.clone());
@@ -275,16 +281,20 @@ window.bookify = (function() {
   function initEvents() {
     Mousetrap.bind(['right', 'space'], function() {
       pointer = controller.renderNextPage(pointer, surface);
+      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
     Mousetrap.bind(['left', 'shift+space'], function() {
       pointer = controller.renderPreviousPage(pointer, surface);
+      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
     Mousetrap.bind('up', function() {
       pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
+      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
     Mousetrap.bind("d", function() {
       settings.debug = !settings.debug;
       pointer = controller.renderCurrentPage(pointer, surface);
+      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
     Mousetrap.bind("?", function() {
       alert("Right | Space = move forward\nLeft | Shift+Space = move back\nUp = top of document\nd = toggle debug mode");
@@ -292,6 +302,7 @@ window.bookify = (function() {
     $(document).mousemove(cleanMouseMovement(mouseMovement));
     $(window).resize(function() {
       pointer = controller.renderCurrentPage(pointer, surface);
+      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
   }
 
@@ -308,7 +319,8 @@ window.bookify = (function() {
           article = results.content.first().before(title).siblings();
 
           $("#progress").progressbar({
-            value: 37
+            value: 0,
+            max: article.length
           });
 
           pointer = controller.renderCurrentPage({pageHead: article.first()}, surface);
