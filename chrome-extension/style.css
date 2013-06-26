@@ -19,6 +19,11 @@ body {
   color: #333;
 }
 
+#content .debug {
+  color: red;
+  background-color: gray;
+}
+
 @media screen and (max-width: 600px) {
   #content {
     padding: 0 .25em;
