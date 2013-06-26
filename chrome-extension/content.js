@@ -94,7 +94,11 @@ var renderer = {
       surface.append(pageElement);
       if (renderer.elementOffPage(body)) {
         aborted = true;
-        pageElement.remove();
+        if (settings.debug) {
+          pageElement.addClass('debug');
+        } else {
+          pageElement.remove();
+        }
         return false;
       } else {
         lastRendered = $(this);
@@ -216,14 +220,17 @@ var controller = {
 };
 
 // TODO rewrite this to use objects, e.g. not horrible global scope madness
-pointer = {
+var pointer = {
   // The node at the top of the *current* page
   pageHead: null,
   // The node that will be at the top of the *next* page
   nextPageHead: null
 };
-surface = null;
-cursorHideTimeoutId = null;
+var surface, cursorHideTimeoutId;
+
+var settings = {
+  debug: false
+};
 
 var bookify = {
   nukePageFromOrbit: function() {
@@ -264,20 +271,21 @@ var bookify = {
   },
 
   initEvents: function() {
-    $(document).keydown(function(e) {
-      //TODO clean up, switch or something better
-      if (e.keyCode == 39 || (!e.shiftKey && e.keyCode == 32)) {
-        // Right or Space
-        pointer = controller.renderNextPage(pointer, surface);
-      } else if (e.keyCode == 37 || (e.shiftKey && e.keyCode == 32)) {
-        // Left or Shift+Space
-        pointer = controller.renderPreviousPage(pointer, surface);
-      } else if (e.keyCode == 38) {
-        // Up
-        pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
-      } else {
-        //console.log("Pressed " + e.keyCode);
-      }
+    Mousetrap.bind(['right', 'space'], function() {
+      pointer = controller.renderNextPage(pointer, surface);
+    });
+    Mousetrap.bind(['left', 'shift+space'], function() {
+      pointer = controller.renderPreviousPage(pointer, surface);
+    });
+    Mousetrap.bind('up', function() {
+      pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
+    });
+    Mousetrap.bind("d", function() {
+      settings.debug = !settings.debug;
+      pointer = controller.renderCurrentPage(pointer, surface);
+    });
+    Mousetrap.bind("?", function() {
+      alert("Right | Space = move forward\nLeft | Shift+Space = move back\nUp = top of document\nd = toggle debug mode");
     });
     $(document).mousemove(bookify.cleanMouseMovement(bookify.mouseMovement));
     $(window).resize(function() {
