@@ -219,9 +219,10 @@ var controller = {
   }
 };
 
-  var settings = {
-    debug: false
-  };
+// "Global" settings config
+var settings = {
+  debug: false
+};
 
 window.bookify = (function() {
   var pointer = {
