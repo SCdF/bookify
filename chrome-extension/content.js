@@ -219,21 +219,20 @@ var controller = {
   }
 };
 
-// TODO rewrite this to use objects, e.g. not horrible global scope madness
-var pointer = {
-  // The node at the top of the *current* page
-  pageHead: null,
-  // The node that will be at the top of the *next* page
-  nextPageHead: null
-};
-var surface, cursorHideTimeoutId;
+  var settings = {
+    debug: false
+  };
 
-var settings = {
-  debug: false
-};
+window.bookify = (function() {
+  var pointer = {
+    // The node at the top of the *current* page
+    pageHead: null,
+    // The node that will be at the top of the *next* page
+    nextPageHead: null
+  };
+  var surface, cursorHideTimeoutId;
 
-var bookify = {
-  nukePageFromOrbit: function() {
+  function nukePageFromOrbit() {
     // Nuke the current page from orbit
     window.onload = window.onunload = function() {};
     $("head").empty();
@@ -241,9 +240,9 @@ var bookify = {
 
     $("body").append("<div id='content'></div>");
     return $('#content');
-  },
+  }
 
-  cleanMouseMovement: function (successFn) {
+  function cleanMouseMovement(successFn) {
     // Clean up bogus mouse movement
     var x = -1, y = -1;
 
@@ -255,9 +254,9 @@ var bookify = {
         successFn(e);
       }
     }
-  },
+  }
 
-  mouseMovement: function(e) {
+  function mouseMovement(e) {
     if (cursorHideTimeoutId) {
       window.clearTimeout(cursorHideTimeoutId);
     }
@@ -268,9 +267,9 @@ var bookify = {
       function() {
         $("body").css("cursor", "none");
       }, 3000);
-  },
+  }
 
-  initEvents: function() {
+  function initEvents() {
     Mousetrap.bind(['right', 'space'], function() {
       pointer = controller.renderNextPage(pointer, surface);
     });
@@ -287,18 +286,18 @@ var bookify = {
     Mousetrap.bind("?", function() {
       alert("Right | Space = move forward\nLeft | Shift+Space = move back\nUp = top of document\nd = toggle debug mode");
     });
-    $(document).mousemove(bookify.cleanMouseMovement(bookify.mouseMovement));
+    $(document).mousemove(cleanMouseMovement(mouseMovement));
     $(window).resize(function() {
       pointer = controller.renderCurrentPage(pointer, surface);
     });
-  },
+  }
 
-  loadPageAttempt: function() {
+  function loadPageAttempt() {
     readability.getContent(document.URL,
       function(results) {
         chrome.runtime.sendMessage({state: "loaded"}, function() {
-          surface = bookify.nukePageFromOrbit();
-          bookify.initEvents();
+          surface = nukePageFromOrbit();
+          initEvents();
 
           document.title = results.title;
           var title = $("<h1>").html(results.title);
@@ -314,13 +313,15 @@ var bookify = {
         console.log(textStatus, errorThrown);
         $("#content").append("<p>"+textStatus+"</p><p>"+errorThrown+"</p>");
       });
-  },
-
-  init: function() {
-    chrome.runtime.sendMessage({state: "loading"}, function() {
-      bookify.loadPageAttempt();
-    });
   }
-};
+
+  return {
+    init: function() {
+      chrome.runtime.sendMessage({state: "loading"}, function() {
+        loadPageAttempt();
+      });
+    }
+  }
+})();
 
 bookify.init();
