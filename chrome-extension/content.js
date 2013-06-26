@@ -232,6 +232,7 @@ window.bookify = (function() {
     // The node that will be at the top of the *next* page
     nextPageHead: null
   };
+  var article;
   var surface, cursorHideTimeoutId;
 
   function nukePageFromOrbit() {
@@ -240,7 +241,7 @@ window.bookify = (function() {
     $("head").empty();
     $("body").empty();
 
-    $("body").append("<div id='content'></div>");
+    $("body").append("<div id='content'></div><div id='progress'></div>");
     return $('#content');
   }
 
@@ -302,10 +303,15 @@ window.bookify = (function() {
           initEvents();
 
           document.title = results.title;
-          var title = $("<h1>").html(results.title);
-          var combinedArticle = results.content.first().before(title).siblings();
 
-          pointer = controller.renderCurrentPage({pageHead: combinedArticle.first()}, surface);
+          var title = $("<h1>").html(results.title);
+          article = results.content.first().before(title).siblings();
+
+          $("#progress").progressbar({
+            value: 37
+          });
+
+          pointer = controller.renderCurrentPage({pageHead: article.first()}, surface);
         });
       },
       function(jqXHR, textStatus, errorThrown) {

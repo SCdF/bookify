@@ -6,6 +6,26 @@
 body {
   /*background-color: #FFF8E7; /* cosmic latte */
   background-color: white;
+  margin: 0;
+  padding: 0;
+}
+
+#progress {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  top: 0px;
+  height: 0.1em;
+
+  width: 100%;
+}
+.ui-progressbar {
+  height: 100%;
+  background-color: black;
+}
+.ui-progressbar-value {
+  height: 100%;
+  background-color: red;
 }
 
 #content {
