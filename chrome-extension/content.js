@@ -170,7 +170,7 @@ var controller = {
   },
   renderNextPage: function(pointer, surface) {
     if (pointer.nextPageHead.length == 0) {
-      surface.effect("shake", {direction: "left", distance: 5});
+      surface.effect("shake", {direction: "left", distance: 3});
       return pointer;
     }
 
@@ -190,7 +190,7 @@ var controller = {
   renderPreviousPage: function(pointer, surface) {
     var prevEl = pointer.pageHead.prev();
     if (prevEl.length == 0) {
-      surface.effect("shake", {direction: "right", distance: 5});
+      surface.effect("shake", {direction: "right", distance: 3});
       return pointer;
     }
 

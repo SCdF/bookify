@@ -9,9 +9,10 @@ body {
 }
 
 #content {
-  padding: .5em 1em;
+  padding: 1em;
 
-  font-size: 125%;
+  font-size: 100%;
+  line-height: 3ex;
   font-family: sans-serif;
   text-shadow:0 0 1px transparent;
   text-rendering: optimizeLegibility;
@@ -46,8 +47,11 @@ body {
     -webkit-column-count: 2;
     column-count: 2;
 
-    -moz-column-gap: 2em;
-    -webkit-column-gap: 2em;
-    column-gap: 2em;
+    padding-left: 2em;
+    padding-right: 2em;
+
+    -moz-column-gap: 4em;
+    -webkit-column-gap: 4em;
+    column-gap: 4em;
   }
 }
