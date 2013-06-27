@@ -332,6 +332,7 @@ window.bookify = (function() {
           });
 
           pointer = controller.renderCurrentPage({pageHead: article.first()}, surface);
+          controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
         });
       },
       function(jqXHR, textStatus, errorThrown) {
