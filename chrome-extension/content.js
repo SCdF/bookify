@@ -279,15 +279,23 @@ window.bookify = (function() {
   }
 
   function initEvents() {
-    Mousetrap.bind(['right', 'space'], function() {
+    Mousetrap.bind(['right', 'space', 'j'], function() {
       pointer = controller.renderNextPage(pointer, surface);
       controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
-    Mousetrap.bind(['left', 'shift+space'], function() {
+    Mousetrap.bind(['left', 'shift+space', 'k'], function() {
       pointer = controller.renderPreviousPage(pointer, surface);
       controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
-    Mousetrap.bind('up', function() {
+    Mousetrap.bind(['up', 'h'], function() {
+      //TODO move back one element
+      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
+    });
+    Mousetrap.bind(['down', 'l'], function() {
+      //TOOD move forward one element (unless you're already rendering the last page)
+      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
+    });
+    Mousetrap.bind('home', function() {
       pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
       controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
@@ -297,7 +305,7 @@ window.bookify = (function() {
       controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
     });
     Mousetrap.bind("?", function() {
-      alert("Right | Space = move forward\nLeft | Shift+Space = move back\nUp = top of document\nd = toggle debug mode");
+      alert("Right/Space/j = move forward\nLeft/Shift+Space/k = move back\nHome = top of document\nd = toggle debug mode");
     });
     $(document).mousemove(cleanMouseMovement(mouseMovement));
     $(window).resize(function() {
