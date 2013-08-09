@@ -57,15 +57,18 @@ window.bookify = {
     apiCallUrl: function(contentUrl) {
       return "https://readability.com/api/content/v1/parser?token=" + bookify.settings.token + "&url=" + contentUrl;
     },
-    getContent: function(contentUrl, successFn, errorFn) {
-      //FIXME change to map of params
+    getContent: function(contentUrl, params) {
+      var successFn = param.success;
+      var errorFn = param.error;
+      var dataType = param.dataType || 'json';
+
       /* Slurps content from the given url and passes the first element to success */
       var apiCallUrl = bookify.readability.apiCallUrl(contentUrl);
 
       //console.log("Trying to load " + apiCallUrl);
       $.ajax({
         url: apiCallUrl,
-        dataType: "json",
+        dataType: dataType,
         success: function(results){
           //console.log("Loaded " + results.url);
           results.content = bookify.readability.extractContent($.parseHTML(results.content));
