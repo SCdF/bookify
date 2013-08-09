@@ -49,18 +49,18 @@ window.bookify = {
       /* array of all the main content */
 
       var filteredContent = $("<div></div>");
-      $(allContent).find("*").filter(readability.isLeafNodeFilter).each(function() {
+      $(allContent).find("*").filter(bookify.readability.isLeafNodeFilter).each(function() {
         filteredContent.append($(this).clone());
       });
       return filteredContent.children();
     },
     apiCallUrl: function(contentUrl) {
-      return "https://readability.com/api/content/v1/parser?token=" + settings.token + "&url=" + contentUrl;
+      return "https://bookify.readability.com/api/content/v1/parser?token=" + bookify.settings.token + "&url=" + contentUrl;
     },
     getContent: function(contentUrl, successFn, errorFn) {
       //FIXME change to map of params
       /* Slurps content from the given url and passes the first element to success */
-      var apiCallUrl = readability.apiCallUrl(contentUrl);
+      var apiCallUrl = bookify.readability.apiCallUrl(contentUrl);
 
       //console.log("Trying to load " + apiCallUrl);
       $.ajax({
@@ -68,7 +68,7 @@ window.bookify = {
         dataType: "json",
         success: function(results){
           //console.log("Loaded " + results.url);
-          results.content = readability.extractContent($.parseHTML(results.content));
+          results.content = bookify.readability.extractContent($.parseHTML(results.content));
 
           successFn(results);
         },
@@ -96,9 +96,9 @@ window.bookify = {
       element.nextAll().addBack().each(function() {
         var pageElement = $(this).clone();
         surface.append(pageElement);
-        if (renderer.elementOffPage(body)) {
+        if (bookify.renderer.elementOffPage(body)) {
           aborted = true;
-          if (settings.debug) {
+          if (bookify.settings.debug) {
             pageElement.addClass('debug');
           } else {
             pageElement.remove();
@@ -129,7 +129,7 @@ window.bookify = {
         if (! pageTail) pageTail = pageElement;
 
         surface.prepend(pageElement);
-        if (renderer.elementOffPage(body)) {
+        if (bookify.renderer.elementOffPage(body)) {
           aborted = true;
           pageElement.remove();
           return false;
@@ -166,11 +166,11 @@ window.bookify = {
     },
     renderCurrentPage: function(pointer, surface) {
       surface.empty();
-      var report = renderer.renderPageForward(pointer.pageHead, surface);
+      var report = bookify.renderer.renderPageForward(pointer.pageHead, surface);
 
       // TEMP hack for when elements are too large to ever be rendered
       if (!report.lastRendered) {
-        return controller.largeElementHack(pointer.pageHead, surface);
+        return bookify.controller.largeElementHack(pointer.pageHead, surface);
       }
 
       return {
@@ -185,11 +185,11 @@ window.bookify = {
       }
 
       surface.empty();
-      var report = renderer.renderPageForward(pointer.nextPageHead, surface);
+      var report = bookify.renderer.renderPageForward(pointer.nextPageHead, surface);
 
       // TEMP hack for when elements are too large to ever be rendered
       if (!report.lastRendered) {
-        return controller.largeElementHack(pointer.nextPageHead, surface);
+        return bookify.controller.largeElementHack(pointer.nextPageHead, surface);
       }
 
       return  {
@@ -205,11 +205,11 @@ window.bookify = {
       }
 
       surface.empty();
-      var report = renderer.renderPageBackward(prevEl, surface);
+      var report = bookify.renderer.renderPageBackward(prevEl, surface);
 
       if (!report.aborted) {
         // Haven't run out of space yet, render forward as well
-        var forwardReport = renderer.renderPageForward(report.firstRendered.next(), surface);
+        var forwardReport = bookify.renderer.renderPageForward(report.firstRendered.next(), surface);
         if (forwardReport.lastRendered) {
           return  {
             pageHead: report.lastRendered,
@@ -219,7 +219,7 @@ window.bookify = {
       } else if (!report.lastRendered) {
         // TEMP hack for when elements are too large to ever be rendered
 
-        return controller.largeElementHack(prevEl, surface);
+        return bookify.controller.largeElementHack(prevEl, surface);
       }
 
       return  {
