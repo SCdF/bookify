@@ -55,7 +55,7 @@ window.bookify = {
       return filteredContent.children();
     },
     apiCallUrl: function(contentUrl) {
-      return "https://bookify.readability.com/api/content/v1/parser?token=" + bookify.settings.token + "&url=" + contentUrl;
+      return "https://readability.com/api/content/v1/parser?token=" + bookify.settings.token + "&url=" + contentUrl;
     },
     getContent: function(contentUrl, successFn, errorFn) {
       //FIXME change to map of params
