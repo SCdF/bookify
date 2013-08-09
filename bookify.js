@@ -58,9 +58,9 @@ window.bookify = {
       return "https://readability.com/api/content/v1/parser?token=" + bookify.settings.token + "&url=" + contentUrl;
     },
     getContent: function(contentUrl, params) {
-      var successFn = param.success;
-      var errorFn = param.error;
-      var dataType = param.dataType || 'json';
+      var successFn = params.success;
+      var errorFn = params.error;
+      var dataType = params.dataType || 'json';
 
       /* Slurps content from the given url and passes the first element to success */
       var apiCallUrl = bookify.readability.apiCallUrl(contentUrl);
