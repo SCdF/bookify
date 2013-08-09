@@ -1,13 +1,16 @@
-//@ sourceURL=content.js
-window.bookify = (function() {
+//@ sourceURL=bookify.js
+window.bookify = {
   // "Global" settings config
-  var settings = {
-    debug: false
-  };
+  // This should be passed in at some point
+  settings: {
+    debug: false,
+    token: "YOU-NEED-TO-SPECIFY-ONE-SILLY"
+  },
+
   /*
     Concerned with retrieving parsable DOM objects for an article
   */
-  var readability = {
+  readability: {
     isLeafNodeFilter: function() {
       /* Where 'leaf' means a block level node with no block level children */
 
@@ -51,10 +54,8 @@ window.bookify = (function() {
       });
       return filteredContent.children();
     },
-    token: "3f5c9f6c9869dbb23897ffe7c06f79ea4c1f1963",
-    apiRoot: "https://readability.com",
     apiCallUrl: function(contentUrl) {
-      return readability.apiRoot + "/api/content/v1/parser?token=" + readability.token + "&url=" + contentUrl;
+      return "https://readability.com/api/content/v1/parser?token=" + settings.token + "&url=" + contentUrl;
     },
     getContent: function(contentUrl, successFn, errorFn) {
       //FIXME change to map of params
@@ -74,16 +75,15 @@ window.bookify = (function() {
         error: errorFn
       });
     }
-  };
+  },
 
   /*
     Concerned with rendering cloned DOM data to the page.
   */
-  var renderer = {
+  renderer: {
     elementOffPage: function(element) {
       var elBottom = element.offset().top + element.height();
       var screenHeight = $(window).height();
-      // //console.log("El at " + elBottom + " of " + screenHeight);
       return (elBottom > screenHeight) ? true : false;
     },
     renderPageForward: function(element, surface) {
@@ -144,12 +144,12 @@ window.bookify = (function() {
         aborted: aborted
       };
     }
-  };
+  },
 
   /*
     Concerned with logic around rendering pages
   */
-  var controller = {
+  controller: {
     updateProgressbar: function(progressbar, elements, currentEl) {
       var progress = currentEl.length == 0 ? elements.length : elements.index(currentEl);
 
@@ -227,130 +227,5 @@ window.bookify = (function() {
         nextPageHead: report.firstRendered.next()
       };
     }
-  };
-
-  // "Instance" data. Only the functions below should directly access this,
-  // to make it easier to spin the above off as libraries later (maybe probably not)
-
-  var pointer = {
-    // The node at the top of the *current* page
-    pageHead: null,
-    // The node that will be at the top of the *next* page
-    nextPageHead: null
-  };
-  var article;
-  var surface, cursorHideTimeoutId;
-
-  function nukePageFromOrbit() {
-    // Nuke the current page from orbit
-    window.onload = window.onunload = function() {};
-    $("head").empty();
-    $("body").empty();
-
-    $("body").append("<div id='content'></div><div id='progress'></div>");
-    return $('#content');
   }
-
-  function cleanMouseMovement(successFn) {
-    // Clean up bogus mouse movement
-    var x = -1, y = -1;
-
-    return function(e) {
-      if (e.pageX !== x || e.pageY !== y) {
-        x = e.pageX;
-        y = e.pageY;
-
-        successFn(e);
-      }
-    }
-  }
-
-  function mouseMovement(e) {
-    if (cursorHideTimeoutId) {
-      window.clearTimeout(cursorHideTimeoutId);
-    }
-
-    $("body").css("cursor", "default");
-
-    cursorHideTimeoutId = window.setTimeout(
-      function() {
-        $("body").css("cursor", "none");
-      }, 3000);
-  }
-
-  function initEvents() {
-    Mousetrap.bind(['right', 'space', 'j'], function() {
-      pointer = controller.renderNextPage(pointer, surface);
-      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
-    });
-    Mousetrap.bind(['left', 'shift+space', 'k'], function() {
-      pointer = controller.renderPreviousPage(pointer, surface);
-      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
-    });
-    Mousetrap.bind(['up', 'h'], function() {
-      //TODO move back one element
-      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
-    });
-    Mousetrap.bind(['down', 'l'], function() {
-      //TOOD move forward one element (unless you're already rendering the last page)
-      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
-    });
-    Mousetrap.bind('home', function() {
-      pointer = controller.renderCurrentPage({pageHead: pointer.pageHead.siblings().addBack().first()}, surface);
-      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
-    });
-    Mousetrap.bind("d", function() {
-      settings.debug = !settings.debug;
-      pointer = controller.renderCurrentPage(pointer, surface);
-      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
-    });
-    Mousetrap.bind("?", function() {
-      alert("Right/Space/j = move forward\nLeft/Shift+Space/k = move back\nHome = top of document\nd = toggle debug mode");
-    });
-    $(document).mousemove(cleanMouseMovement(mouseMovement));
-    $(window).resize(function() {
-      pointer = controller.renderCurrentPage(pointer, surface);
-      controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
-    });
-  }
-
-  function loadPageAttempt() {
-    readability.getContent(document.URL,
-      function(results) {
-        chrome.runtime.sendMessage({state: "loaded"}, function() {
-          surface = nukePageFromOrbit();
-          initEvents();
-
-          document.title = results.title;
-
-          var title = $("<h1>").html(results.title);
-          article = results.content.first().before(title).siblings();
-
-          $("#progress").progressbar({
-            value: 0,
-            max: article.length
-          });
-
-          pointer = controller.renderCurrentPage({pageHead: article.first()}, surface);
-          controller.updateProgressbar($("#progress"), article, pointer.nextPageHead);
-        });
-      },
-      function(jqXHR, textStatus, errorThrown) {
-        chrome.runtime.sendMessage({state: "error", textStatus: textStatus, errorThrown: errorThrown});
-
-        console.log("Something went wrong, error below the line!")
-        console.log(textStatus, errorThrown);
-        $("#content").append("<p>"+textStatus+"</p><p>"+errorThrown+"</p>");
-      });
-  }
-
-  return {
-    init: function() {
-      chrome.runtime.sendMessage({state: "loading"}, function() {
-        loadPageAttempt();
-      });
-    }
-  }
-})();
-
-bookify.init();
+};
